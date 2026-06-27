@@ -4,19 +4,26 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:torch_light/torch_light.dart';
 
-// 👇 مفتاح التحكم في الإعلانات:
-//   true  = إعلانات تجريبية (استخدمها وإنت بتجرّب) ✅
-//   false = إعلاناتك الحقيقية (بدّلها لـ false قبل النشر بس)
-const bool kUseTestAds = true;
+// 👇 وضع الإعلانات:
+// false = إعلاناتك الحقيقية (للربح) ✅ ← ده اللي شغّال دلوقتي
+// true  = إعلانات تجريبية (وقت التطوير بس)
+const bool kUseTestAds = false;
 
 // Ad Unit IDs
 const String _testBannerId = 'ca-app-pub-3940256099942544/6300978111';
 const String _realBannerId = 'ca-app-pub-5650078157837633/9835166563';
 String get bannerAdUnitId => kUseTestAds ? _testBannerId : _realBannerId;
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  MobileAds.instance.initialize();
+  await MobileAds.instance.initialize();
+
+  // 🛡️ جهازك مسجّل كجهاز اختبار: إنت تشوف إعلان تجريبي،
+  // وأصحابك يشوفوا الإعلان الحقيقي. ده بيحميك من الحظر.
+  await MobileAds.instance.updateRequestConfiguration(
+    RequestConfiguration(testDeviceIds: ['58935E6240FCD39A7EA6261D70057935']),
+  );
+
   runApp(const FlashApp());
 }
 
@@ -152,10 +159,13 @@ class _FlashScreenState extends State<FlashScreen> {
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
-        onAdLoaded: (_) => setState(() => _bannerReady = true),
+        onAdLoaded: (_) {
+          debugPrint('✅ الإعلان اتحمّل بنجاح');
+          setState(() => _bannerReady = true);
+        },
         onAdFailedToLoad: (ad, error) {
+          debugPrint('❌ الإعلان فشل: $error');
           ad.dispose();
-          _bannerReady = false;
         },
       ),
     )..load();
@@ -476,3 +486,4 @@ class _FlashScreenState extends State<FlashScreen> {
     );
   }
 }
+//555
